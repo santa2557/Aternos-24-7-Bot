@@ -24,6 +24,7 @@ The Bot ONLY WORKS ON JAVA CRACKED (Cross-play available) Servers.
 2. Write your CRACKED JAVA (Cross-play Available) server IP, Username, Port, and version in the TextBox.
 3. Click "Start Bot" To spawn the Bot.
 4. The Bot will jump every 60 seconds to AFK without Minecraft knowing.
+5. EVEN when closing the window, it will still AFK in cloud
 
 ## License
 Copyright (C) 2024 Santa
