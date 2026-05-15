@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bot Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #0f0f0f; color: #eee; padding: 2rem; }
+    h1 { font-size: 20px; font-weight: 500; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #555; display: inline-block; transition: background 0.3s; }
+    .dot.online { background: #22c55e; }
+    .card { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem; }
+    label { display: block; font-size: 13px; color: #888; margin-bottom: 6px; }
+    input { width: 100%; background: #111; border: 1px solid #333; border-radius: 8px; padding: 8px 12px; color: #eee; font-size: 14px; outline: none; margin-bottom: 14px; }
+    input:focus { border-color: #555; }
+    .row { display: grid; grid-template-columns: 1fr 120px; gap: 10px; }
+    .btn-row { display: flex; gap: 8px; margin-top: 4px; }
+    button { padding: 9px 22px; border-radius: 8px; font-size: 14px; cursor: pointer; border: none; font-weight: 500; }
+    .btn-start { background: #166534; color: #86efac; }
+    .btn-start:hover { background: #15803d; }
+    .btn-stop { background: #7f1d1d; color: #fca5a5; }
+    .btn-stop:hover { background: #991b1b; }
+    .log-box { background: #111; border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; min-height: 120px; max-height: 200px; overflow-y: auto; }
+    .log-line { margin: 2px 0; color: #aaa; }
+    .log-line.ok { color: #86efac; }
+    .log-line.err { color: #fca5a5; }
+    .log-title { font-size: 13px; color: #888; margin-bottom: 8px; }
+    #status { font-size: 13px; color: #555; }
+  </style>
+</head>
+<body>
+
+  <h1>
+    <span class="dot" id="dot"></span>
+    Bot dashboard
+    <span id="status">Offline</span>
+  </h1>
+
+  <div class="card">
+    <label>Server IP</label>
+    <input type="text" id="host" placeholder="yourname.aternos.me">
+
+    <div class="row">
+      <div>
+        <label>Username</label>
+        <input type="text" id="username" value="KeepAliveBot">
+      </div>
+      <div>
+        <label>Port</label>
+        <input type="text" id="port" value="25565">
+      </div>
+    </div>
+
+    <label>Version</label>
+    <input type="text" id="version" value="1.21.1">
+
+    <div class="btn-row">
+      <button class="btn-start" onclick="startBot()">&#9654; Start bot</button>
+      <button class="btn-stop" onclick="stopBot()">&#9632; Stop bot</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="log-title">Log</div>
+    <div class="log-box" id="log">
+      <div class="log-line">> Waiting to start...</div>
+    </div>
+  </div>
+
+  <script>
+    function log(msg, type) {
+      const box = document.getElementById('log')
+      const line = document.createElement('div')
+      line.className = 'log-line' + (type ? ' ' + type : '')
+      line.textContent = '> ' + msg
+      box.appendChild(line)
+      box.scrollTop = box.scrollHeight
+    }
+
+    function setStatus(online) {
+      document.getElementById('dot').className = 'dot' + (online ? ' online' : '')
+      document.getElementById('status').textContent = online ? 'Online' : 'Offline'
+      document.getElementById('status').style.color = online ? '#86efac' : '#555'
+    }
+
+    function startBot() {
+      const host = document.getElementById('host').value.trim()
+      if (!host) { log('Please enter a server IP!', 'err'); return; }
+      const username = document.getElementById('username').value.trim() || 'KeepAliveBot'
+      const port = parseInt(document.getElementById('port').value) || 25565
+      const version = document.getElementById('version').value.trim() || '1.21.1'
+
+      log('Connecting to ' + host + ':' + port + '...')
+
+      fetch('/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ host, port, username, version })
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) { log('Bot started!', 'ok'); setStatus(true) }
+        else { log('Error: ' + d.error, 'err') }
+      })
+      .catch(() => log('Could not reach server', 'err'))
+    }
+
+    function stopBot() {
+      fetch('/stop', { method: 'POST' })
+        .then(r => r.json())
+        .then(() => { log('Bot stopped.', 'err'); setStatus(false) })
+        .catch(() => log('Could not reach server', 'err'))
+    }
+
+    setInterval(() => {
+      fetch('/logs')
+        .then(r => r.json())
+        .then(d => { if (d.logs) d.logs.forEach(l => log(l)) })
+        .catch(() => {})
+    }, 2000)
+  </script>
+
+</body>
+</html>
